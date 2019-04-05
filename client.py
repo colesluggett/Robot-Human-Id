@@ -48,9 +48,9 @@ class ClientSocket(threading.Thread):
         exit()
 
 def main():
-    IP = '10.200.38.204'
-    PORT = 5010
-    client = ClientSocket(IP, PORT)
+    # IP = '10.200.38.204'
+    # PORT = 5010
+    # client = ClientSocket(IP, PORT)
     ##client.start()
 
     for i in ["Howdy Partner"]:

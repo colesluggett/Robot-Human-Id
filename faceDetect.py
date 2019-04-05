@@ -7,7 +7,7 @@ import imutils
 import maestro
 import sys
 import select
-import threading
+import client
 
 #class KeyControl sets motor speed of the tango bot
 class KeyControl():
@@ -26,18 +26,22 @@ class KeyControl():
     def head(self,key):
         print(key)
         if key == 97:
+            time.sleep(.05)
             self.headTurn += 200
             if(self.headTurn > 7900):
                 self.headTurn = 7900
             self.tango.setTarget(HEADTURN, self.headTurn)
         elif key == 100:
+            time.sleep(.05)
             self.headTurn -= 200
             if(self.headTurn < 1510):
                 self.headTurn = 1510
             self.tango.setTarget(HEADTURN, self.headTurn)
         elif key == 101:
             self.headTurn = 6000
+            self.headTilt = 6000
             self.tango.setTarget(HEADTURN, self.headTurn)
+            self.tango.setTarget(HEADTILT, self.headTilt)
         elif key == 119:
             self.headTilt += 200
             if(self.headTilt > 7900):
@@ -85,13 +89,13 @@ class KeyControl():
             print(self.motors)
             self.tango.setTarget(MOTORS, self.motors)
         elif key == 83:
-            self.turn = 5000
+            self.turn = 5100
             if(self.turn > 7400):
                 self.turn = 7400
             print(self.turn)
             self.tango.setTarget(TURN, self.turn)
         elif key == 81:
-            self.turn = 7000
+            self.turn = 6900
             if(self.turn <2110):
                 self.turn = 2110
             print(self.turn)
@@ -200,6 +204,10 @@ rawCapture = PiRGBArray(camera, size=(640, 480))
 # allow the camera to warmup
 time.sleep(0.1)
 
+IP = '10.200.42.220'
+PORT = 5010
+client = client.ClientSocket(IP, PORT)
+
 MOTORS = 1
 TURN = 2
 BODY = 0
@@ -215,7 +223,9 @@ faceLR='R'   #where the face was last seen
 size=0
 centerX=0
 centerY=0
-
+tf = True
+follow = False
+count = 0
 
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
 
@@ -223,21 +233,45 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray, 1.3, 5)
 
-    #print(faces)
+
     for (x,y,w,h) in faces:
+        count = 0
         cv2.rectangle(img,(x,y),(x+w,y+h),(255,0,0))
         state=2
         centerX=x+(w/2)
         centerY=y+(h/2)
         size=w*h
-        if centerX > 280 and centerX < 360:
-            xx, yy = keys.getHead()
-            if xx > 5700 and xx < 6300:
-                move2you(w)
-            else:
-                turn2center(xx)
+        if follow is False:
+            if centerX > 280 and centerX < 360:
+                while tf == True:
+                    time.sleep(1)
+                    client.sendData("Howdy")
+                    #client.killSocket()
+                    tf = False
+                xx, yy = keys.getHead()
+                if xx > 5700 and xx < 6300:
+                    print("moves")
+                    move2you(w)
+                    if w >= 89 and w <= 120:
+                        follow = True
+                        break
+                else:
+                    print("turns")
+                    turn2center(xx)
     faceLR=motion(keys,state,centerX,centerY,size,faceLR)
+    if len(faces) == 0:
+        count += 1
 
+    if count == 75:
+        keys.head(101)
+        state=0    #0=no face found 1=face found but not right distance 2=face tracking with only neck
+        faceLR='R'
+        size=0
+        centerX=0
+        centerY=0
+        tf = True
+        follow = False
+        count = 0
 
 
     cv2.imshow('Image',img)
