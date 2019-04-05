@@ -60,23 +60,6 @@ class KeyControl():
             self.tango.setTarget(HEADTILT, self.headTilt)
 
 
-    #increments body value based on key inputs
-    def waist(self, key):
-        print(key)
-
-        if key == 122:
-            self.body += 200
-            if(self.body > 7900):
-                self.body = 7900
-            self.tango.setTarget(BODY, self.body)
-            print("waist right")
-        elif key == 99:
-            self.body -= 200
-            if(self.body < 1510):
-                self.body = 1510
-            self.tango.setTarget(BODY, self.body)
-            print ('waist left')
-
     #increments drive speed on key presses
     #self.motors is how much above or below 0m/s both drive
     #self.turn is the offset(above 6000 mean right motor drives more foward than left)
@@ -113,29 +96,7 @@ class KeyControl():
             self.tango.setTarget(MOTORS, self.motors)
             self.tango.setTarget(TURN, self.turn)
 
-    #passes in a string that changes forward and turn to set values if nothing is passed, motors stop
-    def setTurn(self,str):
-        if str=="forward":
-            self.motors=5350
-            self.turn=6000
-            self.tango.setTarget(MOTORS, self.motors)
-            self.tango.setTarget(TURN, self.turn)
-        elif str=="right":
-            self.motors=6000
-            self.turn=5080
-            self.tango.setTarget(MOTORS, self.motors)
-            self.tango.setTarget(TURN, self.turn)
-        elif str=="left":
-            self.motors=6000
-            self.turn=6920
-            self.tango.setTarget(MOTORS, self.motors)
-            self.tango.setTarget(TURN, self.turn)
-        else:
-            self.motors = 6000
-            self.turn = 6000
-            self.tango.setTarget(MOTORS, self.motors)
-            self.tango.setTarget(TURN, self.turn)
-
+#Motion is in charge of making the head pan and search for a face
 def motion(control, state, x, y, size, LR):
     angle, tilt = control.getHead()
     if state==0:
@@ -222,8 +183,8 @@ HEADTURN = 3
 keys = KeyControl()
 keys.head(ord('w'))
 
-state=0    #0=no face found 1=face found but not right distance 2=face tracking with only neck
-faceLR='R'   #where the face was last seen
+state=0
+faceLR='R'
 size=0
 centerX=0
 centerY=0
@@ -239,7 +200,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray, 1.3, 5)
 
-
+    #finds dimensions for each face found
     for (x,y,w,h) in faces:
         count = 0
         cv2.rectangle(img,(x,y),(x+w,y+h),(255,0,0))
@@ -268,9 +229,10 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     if len(faces) == 0:
         count += 1
 
+    #If lost for 75 frams(apprx. 15 seconds) then reset
     if count == 75:
         keys.head(101)
-        state=0    #0=no face found 1=face found but not right distance 2=face tracking with only neck
+        state=0
         faceLR='R'
         size=0
         centerX=0
@@ -295,4 +257,3 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
 
 
 cv2.destroyAllWindows()
-
