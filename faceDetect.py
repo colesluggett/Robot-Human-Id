@@ -1,3 +1,9 @@
+# Cole Sluggett, Kayla Wheeler
+# CSCI 442- Robot Vision
+# Human Robot Interaction
+# April 5, 2019
+
+
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 import time
@@ -155,6 +161,7 @@ def motion(control, state, x, y, size, LR):
             keys.head(115)
     return LR
 
+# centers the robot to the person's face
 def turn2center(x):
     #while x != 6000:
     if x >= 5900 and x <= 6100:
@@ -171,7 +178,7 @@ def turn2center(x):
         #keys.head(97)
     keys.arrow(32)
 
-
+# moves the robot to the correct distance from the person, and moves the robot back if it's too close
 def move2you(x):
     #while x != 90:
     if x >= 89 and x <= 120:
@@ -190,12 +197,8 @@ def move2you(x):
 
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
-# initialize the camera and grab a reference to the raw camera capture
-
-
+# initialize the camera and grab a reference to the raw camera capture and
 # capture frames from the camera
-
-
 camera = PiCamera()
 camera.resolution = (640, 480)
 camera.framerate = 32
@@ -204,6 +207,7 @@ rawCapture = PiRGBArray(camera, size=(640, 480))
 # allow the camera to warmup
 time.sleep(0.1)
 
+# gets IP address from phone and then connects to the app on the phone
 IP = '10.200.42.220'
 PORT = 5010
 client = client.ClientSocket(IP, PORT)
@@ -227,6 +231,8 @@ tf = True
 follow = False
 count = 0
 
+
+# for loop that runs the continous video and gives the commands to the phone, moves and turns the robot
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
 
     img = frame.array
@@ -290,17 +296,3 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
 
 cv2.destroyAllWindows()
 
-#Flow
-#
-#while face not found for 15 secs:
-#search left right up down until face is detected
-#
-#
-#hello human
-#center neck, keep face on screen
-
-#if face is centered:
-#drive until sized correctly
-#else: center face
-#
-#move neck to center on face without driving
